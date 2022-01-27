@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+from datetime import timedelta
 import environ
 # Initialise environment variables
 env = environ.Env()
@@ -43,6 +44,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'chat',
     'core',
+    'rest_framework',
+    'djoser'
 ]
 
 MIDDLEWARE = [
@@ -138,3 +141,23 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 AUTH_USER_MODEL = 'core.User'
+
+REST_FRAMEWORK ={
+    'COERCE_DECIMAL_TO_STRING': False,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+      
+    ),
+
+}
+DJOSER = {
+    'SERIALIZERS': {
+        'user_create': 'core.serializers.UserCreateSerializer'
+    }
+}
+
+
+SIMPLE_JWT = {
+   'AUTH_HEADER_TYPES': ('JWT',),
+   'ACCESS_TOKEN_LIFETIME': timedelta(days=1)
+}
