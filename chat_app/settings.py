@@ -40,9 +40,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'corsheaders',
+    'chat',
+    'core',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -78,8 +82,12 @@ WSGI_APPLICATION = 'chat_app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'django_chatDB',
+        'USER': 'root',
+        'PASSWORD': 'password',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
@@ -124,3 +132,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+
+AUTH_USER_MODEL = 'core.User'

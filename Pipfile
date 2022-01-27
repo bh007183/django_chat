@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 django = "*"
 django-environ = "*"
+django-cors-headers = "*"
+mysqlclient = "*"
 
 [dev-packages]
 
