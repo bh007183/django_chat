@@ -1,15 +1,17 @@
+from collections import namedtuple
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
 from .models import Profile, ProfileLink
 from .serializers import ProfileSerializer, ProfileLinkSerializer
 from rest_framework import status
 from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin
+from .utils import ConnectionObject
 
 # Create your views here.
-
+# Manages Profile Operations
 class ProfileList(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
@@ -40,12 +42,57 @@ class ProfileDetail(APIView):
         serializer = ProfileSerializer(profile, data = request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-       
         return Response(serializer.data)
 
-class ProfileLinkViewSet(DestroyModelMixin, CreateModelMixin, UpdateModelMixin, GenericViewSet):
-    queryset = ProfileLink.objects.all()
-    serializer_class = ProfileLinkSerializer
+# Manages Connection Operations.
+
+class ProfileLinkView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    # creates a connection request. pending is by default set to true as the recipient has yet to accept.
+    def post(self, request):
+        data = ConnectionObject(request)
+        # sets connection for solicitor
+        solicitor = ProfileLinkSerializer(data = data.set_solicitor())
+        solicitor.is_valid(raise_exception=True)
+        solicitor.save()
+        # sets connection for recipient
+        recipient = ProfileLinkSerializer(data = data.set_recipient())
+        recipient.is_valid(raise_exception=True)
+        recipient.save()
+        return Response(status=status.HTTP_201_CREATED)
+    # this patch only worries about updating the pending field, otherwise there is nothing to update.
+    def patch(self, request):
+        # gets current user connection object.
+        userlink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=request.data['friend_id'])
+        serializer1 = ProfileLinkSerializer(userlink, data={'pending': False}, partial=True)
+        serializer1.is_valid(raise_exception=True)
+        serializer1.save()
+        # gets same object but from the friends perspective.
+        friendlink = get_object_or_404(ProfileLink, profile_id=request.data['friend_id'], friend_id=request.user.id)
+        serializer2 = ProfileLinkSerializer(friendlink, data={'pending': False}, partial=True)
+        serializer2.is_valid(raise_exception=True)
+        serializer2.save()
+        return Response(status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        userlink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=request.data['friend_id'])
+        friendlink = get_object_or_404(ProfileLink, profile_id=request.data['friend_id'], friend_id=request.user.id)
+        userlink.delete()
+        friendlink.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        
+
+        
+
+
+
+
+    
+
+
+        
+
 
 
 
