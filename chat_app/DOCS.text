@@ -1,0 +1,23 @@
+This is a functioning backend designed to be used with a client.
+When creating the client, keep these things in mind.
+
+For protected routes, send an Authorization header with the token beeing proceded by JWT.
+The only routes not requiring an Authorization header will be the create user and login routes.
+
+Keep in mind that the django user account will need to be created befor the user profile. They are not directly dependent on each other for reusability. My preference will be to create the user and their profile with one form apone sign up.
+
+
+
+
+
+
+
+
+
+
+
+
+For all requests to the ProfileLinkView, the body should looke like this.
+ {
+|  "friend_id": 1
+|}
