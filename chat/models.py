@@ -12,7 +12,7 @@ class Profile(models.Model):
 
 class ProfileLink(models.Model):
     friend_id = models.ForeignKey('Profile', db_column='friend_id', related_name='friend_id',blank=True, null=True, on_delete=models.SET_NULL)
-    profile_id= models.ForeignKey('Profile', db_column='profile_id' , blank=True, null=True, on_delete=models.SET_NULL)
+    profile_id= models.ForeignKey('Profile', db_column='profile_id', related_name='profile_id', blank=True, null=True, on_delete=models.SET_NULL)
     pending = models.BooleanField(default=True)
 
 

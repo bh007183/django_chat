@@ -1,11 +1,12 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
-from .models import Profile
-from .serializers import ProfileSerializer
+from .models import Profile, ProfileLink
+from .serializers import ProfileSerializer, ProfileLinkSerializer
 from rest_framework import status
-from rest_framework.mixins import DestroyModelMixin
+from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin
 
 # Create your views here.
 
@@ -34,12 +35,18 @@ class ProfileDetail(APIView):
         profile.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def put(slef, request, pk):
+    def put(self, request, pk):
         profile = get_object_or_404(Profile, pk=pk)
         serializer = ProfileSerializer(profile, data = request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+       
         return Response(serializer.data)
+
+class ProfileLinkViewSet(DestroyModelMixin, CreateModelMixin, UpdateModelMixin, GenericViewSet):
+    queryset = ProfileLink.objects.all()
+    serializer_class = ProfileLinkSerializer
+
 
 
 

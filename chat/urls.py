@@ -1,9 +1,14 @@
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from . import views
-from rest_framework import status
+from rest_framework import routers
+
+router= routers.SimpleRouter()
+
+router.register(r'connect', views.ProfileLinkViewSet)
 
 urlpatterns = [
-    path('', views.ProfileList.as_view()),
-    path('<int:pk>/', views.ProfileDetail.as_view())
+    path("", include(router.urls)),
+    path('profile/', views.ProfileList.as_view()),
+    path('profile/<int:pk>/', views.ProfileDetail.as_view())
 ]
