@@ -1,11 +1,11 @@
 from collections import namedtuple
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.viewsets import GenericViewSet, ViewSet
+from rest_framework.viewsets import GenericViewSet, ViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
-from .models import Profile, ProfileLink
-from .serializers import ProfileSerializer, ProfileLinkSerializer
+from .models import Profile, ProfileLink, Room, ProfileRoomLink
+from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer
 from rest_framework import status
 from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin
 from .utils import ConnectionObject
@@ -86,6 +86,10 @@ class ProfileLinkView(APIView):
         serializer = ProfileLinkSerializer(queryset, many=True)
         print(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+    
 
         
 
