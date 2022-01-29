@@ -81,6 +81,12 @@ class ProfileLinkView(APIView):
         friendlink.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def get(self, request):
+        queryset = ProfileLink.objects.filter(profile_id=request.user.id)
+        serializer = ProfileLinkSerializer(queryset, many=True)
+        print(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
         
 
         
