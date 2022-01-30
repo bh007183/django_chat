@@ -4,7 +4,7 @@ from .models import Profile, ProfileLink, Room, ProfileRoomLink
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields=['callsign', 'online', 'connections', 'user_id']
+        fields=['callsign', 'online', 'connections','rooms', 'user_id']
 
     def update(self, instance, validated_data):
         print(instance)
@@ -19,10 +19,18 @@ class ProfileLinkSerializer(serializers.ModelSerializer):
         fields = ['friend_id', 'profile_id', "pending"]
 
 class RoomSerializer(serializers.ModelSerializer):
+    profiles = ProfileSerializer
    
     class Meta: 
         model = Room
         fields = ["id", "name"]
+
+class RoomProfileLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfileRoomLink
+        fields = ["id", "profile_id", "room_id"]
+
+
 
 
 

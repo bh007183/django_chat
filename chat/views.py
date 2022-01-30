@@ -1,13 +1,15 @@
 from collections import namedtuple
+from logging import exception
+import re
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
 from .models import Profile, ProfileLink, Room, ProfileRoomLink
-from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer
+from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer, RoomProfileLinkSerializer
 from rest_framework import status
-from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin
+from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin, RetrieveModelMixin
 from .utils import ConnectionObject
 
 # Create your views here.
@@ -89,20 +91,42 @@ class ProfileLinkView(APIView):
 
 
 class RoomProfileLinkView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    # Creates and adds a Room to the current user.
     def post(self, request):
-        profile = Profile.objects.get(id=request.user.id)
+        # Checkes to see if data is coming through in right format
+        roomserializer = RoomSerializer(data = request.data)
+        roomserializer.is_valid(raise_exception=True)
+        # Gets Current users Profile if exists, Creates room, and adds it to user profile
+        profile = get_object_or_404(Profile, id=request.user.id)
+        profile.rooms.create(name=roomserializer.data["name"])
+        profileserializer = ProfileSerializer(profile)
+        return Response(profileserializer.data, stauts=status.HTTP_201_CREATED)
+    #Adds users to an existing room.
+    def put(self, request):
+        # Checkes to see if data is coming through in right format
+        serailizer = RoomProfileLinkSerializer(data=request.data)
+        serailizer.is_valid(raise_exception=True)
+        # Gets Current users Profile if exists
+        userprofile = get_object_or_404(Profile, id=request.user.id)
+        try:
+            #check to see if Current user is associated with the user and room
+            # If not, exception is raised.
+            userprofile.connections.get(id=serailizer.data["profile_id"])
+            userprofile.rooms.get(id=serailizer.data["room_id"])
+            # If all is good, then save.
+            serailizer.save()
+            return Response(status=status.HTTP_200_OK)
+            
+        except:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
         
-        room = RoomSerializer(data=request.data)
-        room.is_valid(raise_exception=True)
-        print(profile)
-        print(profile.data)
-        profile.room_id.create(room.data)
-        
-        
-        
+       
+
         
 
-        return Response(profile.data)
 
 
     

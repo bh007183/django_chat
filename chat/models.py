@@ -9,6 +9,7 @@ class Profile(models.Model):
     online = models.BooleanField(default=False)
     user_id = models.OneToOneField(settings.AUTH_USER_MODEL, db_column='user_id', on_delete=models.CASCADE)
     connections = models.ManyToManyField('Profile', through='ProfileLink', through_fields=('profile_id', 'friend_id'), blank=True)
+    rooms = models.ManyToManyField('Room', through='ProfileRoomLink', through_fields=('profile_id', 'room_id'), blank=True)
     
 
 class ProfileLink(models.Model):
@@ -19,7 +20,7 @@ class ProfileLink(models.Model):
 
 class Room(models.Model):
     name = models.CharField(max_length=100)
-    profiles = models.ManyToManyField('Profile', through='ProfileRoomLink', blank=True)
+    
     
 
 class ProfileRoomLink(models.Model):
