@@ -88,6 +88,22 @@ class ProfileLinkView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class RoomProfileLinkView(APIView):
+    def post(self, request):
+        profile = Profile.objects.get(id=request.user.id)
+        
+        room = RoomSerializer(data=request.data)
+        room.is_valid(raise_exception=True)
+        print(profile)
+        print(profile.data)
+        profile.room_id.create(room.data)
+        
+        
+        
+        
+
+        return Response(profile.data)
+
 
     
 
