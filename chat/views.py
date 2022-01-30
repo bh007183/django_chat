@@ -47,7 +47,7 @@ class ProfileDetail(APIView):
         return Response(serializer.data)
 
 # Manages Connection Operations.
-
+#TODO refactor ProfileLinViews to use helper methods like add or get
 class ProfileLinkView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     # creates a connection request. pending is by default set to true as the recipient has yet to accept.

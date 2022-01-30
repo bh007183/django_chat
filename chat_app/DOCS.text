@@ -17,7 +17,20 @@ Keep in mind that the django user account will need to be created befor the user
 
 
 
-For all requests to the ProfileLinkView, the body should looke like this.
- {
-|  "friend_id": 1
-|}
+Request Data Format:
+    ProfileLinkView
+        All
+            {
+            |  "friend_id": 1
+            |}
+    RoomProfileLinkView
+        post
+            {
+                "name": "roomname"
+            }
+        put
+            {
+                "profile_id": 3,
+                "room_id": 5
+            }
+
