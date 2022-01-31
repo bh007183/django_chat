@@ -14,7 +14,7 @@ from .utils import ConnectionObject
 
 # Create your views here.
 # Manages Profile Operations
-class ProfileList(APIView):
+class ProfileViewSet(APIView):
     permission_classes = [permissions.IsAuthenticated]
     def get(self, request):
         queryset = Profile.objects.all()
@@ -26,27 +26,28 @@ class ProfileList(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-class ProfileDetail(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    def get(self, request, pk):
-        profile = get_object_or_404(Profile, pk=pk)
+    def get(self, request):
+        profile = get_object_or_404(Profile, pk=request.user.id)
         serializer = ProfileSerializer(profile)
         return Response(serializer.data)
 
-    def delete(self, request, pk):
-        profile = get_object_or_404(Profile, pk=pk)
+    def delete(self, request):
+        profile = get_object_or_404(Profile, pk=request.user.id)
         profile.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def put(self, request, pk):
-        profile = get_object_or_404(Profile, pk=pk)
+    def put(self, request):
+        profile = get_object_or_404(Profile, pk=request.user.id)
         serializer = ProfileSerializer(profile, data = request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
+
+    
+
 # Manages Connection Operations.
+#Because there are additional fields on the ProfileLink table, I opted to not use the helper functions for creating connections for the sake of consistency.
 #TODO refactor ProfileLinViews to use helper methods like add or get
 class ProfileLinkView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -85,6 +86,7 @@ class ProfileLinkView(APIView):
 
     def get(self, request):
         queryset = ProfileLink.objects.filter(profile_id=request.user.id)
+
         serializer = ProfileLinkSerializer(queryset, many=True)
         print(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -107,18 +109,30 @@ class RoomProfileLinkView(APIView):
         # Checkes to see if data is coming through in right format
         serailizer = RoomProfileLinkSerializer(data=request.data)
         serailizer.is_valid(raise_exception=True)
-        # Gets Current users Profile if exists
-        userprofile = get_object_or_404(Profile, id=request.user.id)
-        try:
-            #check to see if Current user is associated with the user and room
-            # If not, exception is raised.
-            userprofile.connections.get(id=request.data["profile_id"])
-            userprofile.rooms.get(id=request.data["room_id"])
+        
+        #Access instance of ProfileLink table where current user and profile id line up.
+        profilelink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=request.data['profile_id'])
+        profilelinkserial = ProfileLinkSerializer(profilelink)
+        if profilelinkserial.data["pending"]:
+            return Response(status=status.HTTP_401_UNAUTHORIZED) 
+        else:
+            try:
+                # Gets Current users Profile if exists
+                userprofile = get_object_or_404(Profile, id=request.user.id)
+                #check to see if Current user is associated with the user and room
+                # If not, exception is raised.
+                userprofile.connections.get(id=request.data["profile_id"])
+                userprofile.rooms.get(id=request.data["room_id"])
             # If all is good, then save.
-            serailizer.save()
-            return Response(status=status.HTTP_200_OK)  
-        except:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+                serailizer.save()
+                return Response(status=status.HTTP_200_OK)  
+            except:
+                return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+
+    
     
     
 

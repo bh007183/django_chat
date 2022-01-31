@@ -11,6 +11,6 @@ urlpatterns = [
     path("", include(router.urls)),
     path('room/', views.RoomProfileLinkView.as_view()),
     path('connect/', views.ProfileLinkView.as_view()),
-    path('profile/', views.ProfileList.as_view()),
-    path('profile/<int:pk>/', views.ProfileDetail.as_view())
+    path('profile/', views.ProfileViewSet.as_view()),
+
 ]
