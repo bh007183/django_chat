@@ -1,11 +1,13 @@
 from collections import namedtuple
 from logging import exception
-import re
+
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
+
+from chat.pagination import DefaultPagination
 from .models import Profile, ProfileLink, Room, ProfileRoomLink, Message
 from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer, RoomProfileLinkSerializer, MessageSerializer
 from rest_framework import status
@@ -16,10 +18,6 @@ from .utils import ConnectionObject
 # Manages Profile Operations
 class ProfileViewSet(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    def get(self, request):
-        queryset = Profile.objects.all()
-        serializer = ProfileSerializer(queryset, many=True)
-        return Response(serializer.data)
     def post(self, request):
         request.data["user_id"] = self.request.user.id
         serializer = ProfileSerializer(data = request.data)
@@ -106,7 +104,7 @@ class RoomProfileLinkView(APIView):
         return Response(profileserializer.data, status=status.HTTP_201_CREATED)
     #Adds users to an existing room.
     def put(self, request):
-        # Checkes to see if data is coming through in right format
+        # Checks to see if data is coming through in right format
         serailizer = RoomProfileLinkSerializer(data=request.data)
         serailizer.is_valid(raise_exception=True)
         
@@ -129,10 +127,18 @@ class RoomProfileLinkView(APIView):
             except:
                 return Response(status=status.HTTP_401_UNAUTHORIZED)
 
+    def delete(self, request):
+        instance = get_object_or_404(ProfileRoomLink, room_id=request.data.room_id, profile_id=request.user.id)
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
-    
+
+class RoomViewSet(RetrieveModelMixin, GenericViewSet):
+    queryset = Room.objects.all()
+    serializer_class = RoomSerializer
+
     
     
 
@@ -140,18 +146,34 @@ class RoomProfileLinkView(APIView):
 class MessageViewSet(ModelViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
+    pagination_class = DefaultPagination
 
-    def create(self, request):
+    def create(self, request, room_pk):
         print(request.data)
         userprofile = get_object_or_404(Profile, id=request.user.id)
         try:
-            userprofile.rooms.get(id=request.data["room_id"])
+            #check to see if room is associated with user. If not it will throw exception.
+            userprofile.rooms.get(id=room_pk)
+            #creates instance and saves it.
             serializer = MessageSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data)
         except:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    def list(self, request, room_pk):
+        userprofile = get_object_or_404(Profile, id=request.user.id)
+        try:
+            #check to see if room is associated with user. If not it will throw exception.
+            userprofile.rooms.get(id=room_pk)
+            #creates instance and saves it.
+            queryset = Message.objects.filter(room_id=room_pk)
+            serializer = MessageSerializer(queryset, many=True)
+            return Response(serializer.data)
+        except:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
 
 
     

@@ -1,3 +1,8 @@
+Edge case: User can add other user to room if connection request was not set from pending to not pending.
+
+
+
+
 This is a functioning backend designed to be used with a client.
 When creating the client, keep these things in mind.
 
@@ -33,4 +38,17 @@ Request Data Format:
                 "profile_id": 3,
                 "room_id": 5
             }
+
+    MessageViewSet
+    nested
+        create 
+        {
+            room_id
+            message
+            profile_id
+        }
+    RoomViewSet
+    only for retrieving
+    parent of MessageViewSet
+
 
