@@ -30,8 +30,8 @@ class ProfileRoomLink(models.Model):
 
 class Message(models.Model):
     message = models.TextField()
-    room_id = models.ForeignKey(Room, db_column='room_id', on_delete=models.CASCADE)
-    user_id = models.ForeignKey(Profile, db_column='user_id', on_delete=models.CASCADE)
+    room_id = models.ForeignKey(Room, db_column='room_id', on_delete=models.CASCADE, null=True)
+    profile_id = models.ForeignKey(Profile, db_column='profile_id', on_delete=models.CASCADE, null=True)
     
 
 

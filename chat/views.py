@@ -6,8 +6,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
-from .models import Profile, ProfileLink, Room, ProfileRoomLink
-from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer, RoomProfileLinkSerializer
+from .models import Profile, ProfileLink, Room, ProfileRoomLink, Message
+from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer, RoomProfileLinkSerializer, MessageSerializer
 from rest_framework import status
 from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin, RetrieveModelMixin
 from .utils import ConnectionObject
@@ -101,7 +101,7 @@ class RoomProfileLinkView(APIView):
         profile = get_object_or_404(Profile, id=request.user.id)
         profile.rooms.create(name=roomserializer.data["name"])
         profileserializer = ProfileSerializer(profile)
-        return Response(profileserializer.data, stauts=status.HTTP_201_CREATED)
+        return Response(profileserializer.data, status=status.HTTP_201_CREATED)
     #Adds users to an existing room.
     def put(self, request):
         # Checkes to see if data is coming through in right format
@@ -112,14 +112,36 @@ class RoomProfileLinkView(APIView):
         try:
             #check to see if Current user is associated with the user and room
             # If not, exception is raised.
-            userprofile.connections.get(id=serailizer.data["profile_id"])
-            userprofile.rooms.get(id=serailizer.data["room_id"])
+            userprofile.connections.get(id=request.data["profile_id"])
+            userprofile.rooms.get(id=request.data["room_id"])
             # If all is good, then save.
             serailizer.save()
-            return Response(status=status.HTTP_200_OK)
-            
+            return Response(status=status.HTTP_200_OK)  
         except:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
+    
+    
+
+
+class MessageViewSet(ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+
+    def create(self, request):
+        print(request.data)
+        userprofile = get_object_or_404(Profile, id=request.user.id)
+        try:
+            userprofile.rooms.get(id=request.data["room_id"])
+            serializer = MessageSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+        except:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+
+    
+       
 
 
         

@@ -1,6 +1,6 @@
 from dataclasses import fields
 from rest_framework import serializers
-from .models import Profile, ProfileLink, Room, ProfileRoomLink
+from .models import Profile, ProfileLink, Room, ProfileRoomLink, Message
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
@@ -29,6 +29,11 @@ class RoomProfileLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProfileRoomLink
         fields = ["id", "profile_id", "room_id"]
+
+class MessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = ["id", "message", "profile_id", "room_id"]
 
 
 

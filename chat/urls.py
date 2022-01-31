@@ -5,7 +5,7 @@ from rest_framework import routers
 
 router= routers.SimpleRouter()
 
-# router.register(r'connect', views.ProfileLinkViewSet)
+router.register(r'message', views.MessageViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
