@@ -1,5 +1,6 @@
 from collections import namedtuple
 from logging import exception
+import profile
 
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
@@ -17,7 +18,7 @@ from .utils import ConnectionObject
 # Create your views here.
 # Manages Profile Operations
 class ProfileViewSet(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+   
     def post(self, request):
         request.data["user_id"] = self.request.user.id
         serializer = ProfileSerializer(data = request.data)
@@ -25,7 +26,7 @@ class ProfileViewSet(APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     def get(self, request):
-        profile = get_object_or_404(Profile, pk=request.user.id)
+        profile = get_object_or_404(Profile, id=request.user.id)
         serializer = ProfileSerializer(profile)
         return Response(serializer.data)
 
@@ -47,8 +48,9 @@ class ProfileViewSet(APIView):
 # Manages Connection Operations.
 #Because there are additional fields on the ProfileLink table, I opted to not use the helper functions for creating connections for the sake of consistency.
 #TODO refactor ProfileLinViews to use helper methods like add or get
+#hidden URIs
 class ProfileLinkView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+   
     # creates a connection request. pending is by default set to true as the recipient has yet to accept.
     def post(self, request):
         data = ConnectionObject(request)
@@ -74,6 +76,7 @@ class ProfileLinkView(APIView):
         serializer2.is_valid(raise_exception=True)
         serializer2.save()
         return Response(status=status.HTTP_200_OK)
+#need to make so can delete
 
     def delete(self, request):
         userlink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=request.data['friend_id'])
@@ -82,16 +85,15 @@ class ProfileLinkView(APIView):
         friendlink.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def get(self, request):
-        queryset = ProfileLink.objects.filter(profile_id=request.user.id)
+    def get(self,request):
+        queryset = Profile.objects.filter(connections=request.user.id)
+        serializer = ProfileSerializer(queryset, many=True)
+        return Response(serializer.data)
 
-        serializer = ProfileLinkSerializer(queryset, many=True)
-        print(serializer)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class RoomProfileLinkView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+   
     # Creates and adds a Room to the current user.
     def post(self, request):
         # Checkes to see if data is coming through in right format
@@ -135,9 +137,12 @@ class RoomProfileLinkView(APIView):
 
 
 
-class RoomViewSet(RetrieveModelMixin, GenericViewSet):
-    queryset = Room.objects.all()
-    serializer_class = RoomSerializer
+class RoomViewSet(APIView):
+    def get(self, request):
+        queryset = Room.objects.filter(profile=request.user.id)
+        serializer = RoomSerializer(queryset, many=True)
+        return Response(serializer.data)
+
 
     
     
