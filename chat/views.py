@@ -12,9 +12,9 @@ from .permissions import IsCurrentUser
 
 from chat.pagination import DefaultPagination
 from .models import Profile, ProfileLink, Room, ProfileRoomLink, Message
-from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer, RoomProfileLinkSerializer, MessageSerializer
+from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerializer, RoomProfileLinkSerializer, MessageSerializer,RoomDetailSerializer
 from rest_framework import status
-from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin, RetrieveModelMixin
+from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin, RetrieveModelMixin,ListModelMixin
 from .utils import ConnectionObject
 from chat import serializers
 
@@ -141,7 +141,7 @@ class RoomProfileLinkDetail(APIView):
                 #check to see if Current user is associated with the user and room
                 # If not, exception is raised.
                 userprofile.connections.get(id=request.data["profile_id"])
-                userprofile.rooms.get(id=request.data["room_id"])
+                userprofile.rooms.get(id=kwargs["room_pk"])
             # If all is good, then save.
                 serailizer.save()
                 return Response(status=status.HTTP_200_OK)  
@@ -152,28 +152,40 @@ class RoomProfileLinkDetail(APIView):
         instance = get_object_or_404(ProfileRoomLink, room_id=kwargs["room_pk"], profile_id=request.user.id)
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+##########################################################################################
+                            #Not Sure About Placement#
+    def get(self, request, **kwargs):
+        userprofile = get_object_or_404(Profile, id=request.user.id)
+        
+       # try:
+            #check to see if room is associated with user. If not it will throw exception.
+        userprofile.rooms.get(id=kwargs["room_pk"])
+        roomqueryset = Room.objects.get(id=kwargs["room_pk"])
+        print(roomqueryset.profile_set.all())
+        print(roomqueryset.message_set.all().reverse())
+        serializer = RoomSerializer(roomqueryset)
+            
+      
+        return Response(ProfileSerializer(roomqueryset.profile_set.all(), many=True).data)
+            # return Response(seri)
+        # except:
+        #     return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 
 
     
-
-
-    
-    
-
-
-class MessageViewSet(ModelViewSet):
+class MessageViewSet(CreateModelMixin,GenericViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
     pagination_class = DefaultPagination
 
-    def create(self, request, room_pk):
+    def create(self, request):
         print(request.data)
         userprofile = get_object_or_404(Profile, id=request.user.id)
         try:
             #check to see if room is associated with user. If not it will throw exception.
-            userprofile.rooms.get(id=room_pk)
+            userprofile.rooms.get(id=request.data["room_id"])
             #creates instance and saves it.
             serializer = MessageSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -182,17 +194,8 @@ class MessageViewSet(ModelViewSet):
         except:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-    def list(self, request, room_pk):
-        userprofile = get_object_or_404(Profile, id=request.user.id)
-        try:
-            #check to see if room is associated with user. If not it will throw exception.
-            userprofile.rooms.get(id=room_pk)
-            #creates instance and saves it.
-            queryset = Message.objects.filter(room_id=room_pk)
-            serializer = MessageSerializer(queryset, many=True)
-            return Response(serializer.data)
-        except:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+   
+        
 
 
 

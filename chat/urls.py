@@ -8,7 +8,7 @@ from rest_framework_nested import routers
 router= routers.SimpleRouter()
 
 
-# router.register(r'room', views.RoomViewSet)
+router.register(r'message', views.MessageViewSet)
 # room_router = routers.NestedSimpleRouter(router, r'room', lookup='room')
 # room_router.register(r'message', views.MessageViewSet, basename='room-message')
 #Note, all routes with profile/<int:pk>/ are protected to verify the current user can only access that view. No one else is permited access.
@@ -16,6 +16,7 @@ router= routers.SimpleRouter()
 
 urlpatterns = [
     path("", include(router.urls)),
+    # path('message/',views.MessageViewSet),
     path('profile/<int:pk>/room/', views.RoomProfileLinkList.as_view()),
     path('profile/<int:pk>/room/<int:room_pk>/', views.RoomProfileLinkDetail.as_view()),
     path('profile/', views.ProfileListView.as_view()),

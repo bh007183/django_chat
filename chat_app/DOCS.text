@@ -47,8 +47,8 @@ Request Data Format:
             message
             profile_id
         }
-    RoomViewSet
-    only for retrieving
-    parent of MessageViewSet
+
+    
+   
 
 

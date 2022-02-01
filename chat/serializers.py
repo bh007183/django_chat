@@ -19,11 +19,10 @@ class ProfileLinkSerializer(serializers.ModelSerializer):
         fields = ['friend_id', 'profile_id', "pending"]
 
 class RoomSerializer(serializers.ModelSerializer):
-    profiles = ProfileSerializer
-   
     class Meta: 
         model = Room
         fields = ["id", "name"]
+
 
 class RoomProfileLinkSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,6 +33,13 @@ class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ["id", "message", "profile_id", "room_id"]
+
+class RoomDetailSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(many=True)
+    # message = MessageSerializer()
+    class Meta: 
+        model = Room
+        fields = ["id", 'profile']
 
 
 
