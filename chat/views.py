@@ -7,6 +7,8 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet, ViewSet, ModelViewSet
 from rest_framework.response import Response
 from rest_framework import authentication, permissions
+from uritemplate import partial
+from .permissions import IsCurrentUser
 
 from chat.pagination import DefaultPagination
 from .models import Profile, ProfileLink, Room, ProfileRoomLink, Message
@@ -14,30 +16,35 @@ from .serializers import ProfileSerializer, ProfileLinkSerializer, RoomSerialize
 from rest_framework import status
 from rest_framework.mixins import DestroyModelMixin, CreateModelMixin, UpdateModelMixin, RetrieveModelMixin
 from .utils import ConnectionObject
+from chat import serializers
 
 # Create your views here.
 # Manages Profile Operations
-class ProfileViewSet(APIView):
-   
+class ProfileListView(APIView):
     def post(self, request):
         request.data["user_id"] = self.request.user.id
         serializer = ProfileSerializer(data = request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    def get(self, request):
-        profile = get_object_or_404(Profile, id=request.user.id)
+
+# All operations here must be current user
+class ProfileDetailView(APIView):
+    # request.user.id
+    permission_classes =[IsCurrentUser] 
+    def get(self, request, pk):
+        profile = get_object_or_404(Profile, pk=pk)
         serializer = ProfileSerializer(profile)
         return Response(serializer.data)
 
-    def delete(self, request):
-        profile = get_object_or_404(Profile, pk=request.user.id)
+    def delete(self, request, pk):
+        profile = get_object_or_404(Profile, pk=pk)
         profile.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    def put(self, request):
-        profile = get_object_or_404(Profile, pk=request.user.id)
-        serializer = ProfileSerializer(profile, data = request.data)
+    def put(self, request, pk):
+        profile = get_object_or_404(Profile, pk=pk)
+        serializer = ProfileSerializer(profile, data = request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -47,12 +54,12 @@ class ProfileViewSet(APIView):
 
 # Manages Connection Operations.
 #Because there are additional fields on the ProfileLink table, I opted to not use the helper functions for creating connections for the sake of consistency.
-#TODO refactor ProfileLinViews to use helper methods like add or get
 #hidden URIs
-class ProfileLinkView(APIView):
-   
+class ProfileLinkListView(APIView):
     # creates a connection request. pending is by default set to true as the recipient has yet to accept.
-    def post(self, request):
+    #AnyOne who is logged in can access this route as it reliews on the JWT info.
+    permission_classes =[IsCurrentUser] 
+    def post(self, request, pk):
         data = ConnectionObject(request)
         # sets connection for solicitor
         solicitor = ProfileLinkSerializer(data = data.set_solicitor())
@@ -63,39 +70,45 @@ class ProfileLinkView(APIView):
         recipient.is_valid(raise_exception=True)
         recipient.save()
         return Response(status=status.HTTP_201_CREATED)
+        #retrieves all connections with pending connections
+    def get(self,request, pk):
+        queryset = Profile.objects.filter(connections=request.user.id)
+        serializer = ProfileSerializer(queryset, many=True)
+        return Response(serializer.data)
+class ProfileLinkDetail(APIView):
     # this patch only worries about updating the pending field, otherwise there is nothing to update.
-    def patch(self, request):
+    permission_classes =[IsCurrentUser] 
+    def patch(self, request, **kwargs):
+        #pk here references the connections pk
         # gets current user connection object.
-        userlink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=request.data['friend_id'])
+        userlink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=kwargs["connections_pk"])
         serializer1 = ProfileLinkSerializer(userlink, data={'pending': False}, partial=True)
         serializer1.is_valid(raise_exception=True)
         serializer1.save()
         # gets same object but from the friends perspective.
-        friendlink = get_object_or_404(ProfileLink, profile_id=request.data['friend_id'], friend_id=request.user.id)
+        friendlink = get_object_or_404(ProfileLink, profile_id=kwargs["connections_pk"], friend_id=request.user.id)
         serializer2 = ProfileLinkSerializer(friendlink, data={'pending': False}, partial=True)
         serializer2.is_valid(raise_exception=True)
         serializer2.save()
         return Response(status=status.HTTP_200_OK)
-#need to make so can delete
-
-    def delete(self, request):
-        userlink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=request.data['friend_id'])
-        friendlink = get_object_or_404(ProfileLink, profile_id=request.data['friend_id'], friend_id=request.user.id)
+    def delete(self, request, **kwargs):
+        userlink = get_object_or_404(ProfileLink, profile_id=request.user.id, friend_id=kwargs["connections_pk"])
+        friendlink = get_object_or_404(ProfileLink, profile_id=kwargs["connections_pk"], friend_id=request.user.id)
         userlink.delete()
         friendlink.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def get(self,request):
-        queryset = Profile.objects.filter(connections=request.user.id)
-        serializer = ProfileSerializer(queryset, many=True)
+    def get(self, request, **kwargs):
+        profile = get_object_or_404(Profile, pk=kwargs["connections_pk"])
+        serializer = ProfileSerializer(profile)
         return Response(serializer.data)
 
 
 
-class RoomProfileLinkView(APIView):
-   
+
+class RoomProfileLinkList(APIView):
+    permission_classes =[IsCurrentUser]
     # Creates and adds a Room to the current user.
-    def post(self, request):
+    def post(self, request, pk):
         # Checkes to see if data is coming through in right format
         roomserializer = RoomSerializer(data = request.data)
         roomserializer.is_valid(raise_exception=True)
@@ -104,8 +117,14 @@ class RoomProfileLinkView(APIView):
         profile.rooms.create(name=roomserializer.data["name"])
         profileserializer = ProfileSerializer(profile)
         return Response(profileserializer.data, status=status.HTTP_201_CREATED)
-    #Adds users to an existing room.
-    def put(self, request):
+    def get(self, request, pk):
+        queryset = Room.objects.filter(profile=request.user.id)
+        serializer = RoomSerializer(queryset, many=True)
+        return Response(serializer.data)
+class RoomProfileLinkDetail(APIView):
+   #Adds users to an existing room.
+    permission_classes =[IsCurrentUser]
+    def put(self, request, **kwargs):
         # Checks to see if data is coming through in right format
         serailizer = RoomProfileLinkSerializer(data=request.data)
         serailizer.is_valid(raise_exception=True)
@@ -129,19 +148,15 @@ class RoomProfileLinkView(APIView):
             except:
                 return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-    def delete(self, request):
-        instance = get_object_or_404(ProfileRoomLink, room_id=request.data.room_id, profile_id=request.user.id)
+    def delete(self, request, **kwargs):
+        instance = get_object_or_404(ProfileRoomLink, room_id=kwargs["room_pk"], profile_id=request.user.id)
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
 
-class RoomViewSet(APIView):
-    def get(self, request):
-        queryset = Room.objects.filter(profile=request.user.id)
-        serializer = RoomSerializer(queryset, many=True)
-        return Response(serializer.data)
+    
 
 
     
