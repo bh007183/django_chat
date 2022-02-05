@@ -22,7 +22,7 @@ from chat import serializers
 # Manages Profile Operations
 class ProfileListView(APIView):
     def post(self, request):
-        request.data["user_id"] = self.request.user.id
+        request.data["id"] = self.request.user.id
         serializer = ProfileSerializer(data = request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()

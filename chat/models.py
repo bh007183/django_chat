@@ -5,9 +5,9 @@ from chat_app import settings
 # Create your models here.
 
 class Profile(models.Model):
+    id = models.OneToOneField(settings.AUTH_USER_MODEL, db_column='id', primary_key=True, on_delete=models.CASCADE)
     callsign = models.CharField(max_length=100)
     online = models.BooleanField(default=False)
-    user_id = models.OneToOneField(settings.AUTH_USER_MODEL, db_column='user_id', on_delete=models.CASCADE)
     connections = models.ManyToManyField('Profile', through='ProfileLink', through_fields=('profile_id', 'friend_id'), blank=True)
     rooms = models.ManyToManyField('Room', through='ProfileRoomLink', through_fields=('profile_id', 'room_id'), blank=True)
     

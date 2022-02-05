@@ -4,11 +4,11 @@ from .models import Profile, ProfileLink, Room, ProfileRoomLink, Message
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields=['callsign', 'online', 'connections','rooms', 'user_id']
+        fields=['id','callsign', 'online', 'connections','rooms']
 
     def update(self, instance, validated_data):
         print(instance)
-        validated_data.pop('user_id', None)  # prevent myfield from being updated
+        validated_data.pop('id', None)  # prevent myfield from being updated
         return super().update(instance, validated_data)
 
         
